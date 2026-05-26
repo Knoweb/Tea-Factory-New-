@@ -4,8 +4,12 @@ import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Download, Thermometer, Droplets, Wind, Activity, Database, Wifi } from "lucide-react"
+import { Download, Thermometer, Droplets, Wind, Activity, Database, Wifi, LogOut, Key, Loader2 } from "lucide-react"
 import Image from "next/image"
+import { useRouter } from "next/navigation"
+import { auth, database } from "@/lib/firebase"
+import { onAuthStateChanged, signOut } from "firebase/auth"
+import { ref, get } from "firebase/database"
 import { TemperatureChart } from "@/components/temperature-chart"
 import { HumidityChart } from "@/components/humidity-chart"
 import { LouverStatusChart } from "@/components/louver-status-chart"
@@ -453,6 +457,9 @@ const fetchAllFirebaseData = async (): Promise<SensorReading[]> => {
 }
 
 export default function TeaFactoryDashboard() {
+  const router = useRouter()
+  const [authLoading, setAuthLoading] = useState(true)
+  const [userProfile, setUserProfile] = useState<any>(null)
   const [sensorData, setSensorData] = useState<SensorReading[]>([])
   const [historicalData, setHistoricalData] = useState<SensorReading[]>([])
   const [currentReading, setCurrentReading] = useState<SensorReading | null>(null)
@@ -464,6 +471,37 @@ export default function TeaFactoryDashboard() {
   const [lastValidFirebaseTime, setLastValidFirebaseTime] = useState<Date | null>(null)
   const [downloadStatus, setDownloadStatus] = useState<string>("")
   const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        router.push("/login");
+        return;
+      }
+      try {
+        const userRef = ref(database, `users/${user.uid}`);
+        const userSnap = await get(userRef);
+        if (!userSnap.exists()) {
+          router.push("/login");
+          return;
+        }
+        const userData = userSnap.val();
+        
+        // If they need to change password, redirect to /change-password
+        if (userData.needsPasswordChange) {
+          router.push("/change-password");
+          return;
+        }
+
+        setUserProfile(userData);
+        setAuthLoading(false);
+      } catch (err) {
+        console.error("Auth check failed:", err);
+        setAuthLoading(false);
+      }
+    });
+    return () => unsubscribeAuth();
+  }, [router]);
 
   useEffect(() => {
     setMounted(true)
@@ -902,6 +940,15 @@ export default function TeaFactoryDashboard() {
     await updateSensorData() // Use the same update function
   }
 
+  if (authLoading) {
+    return (
+      <div style={{ minHeight: "100vh", background: "#064e3b", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <Loader2 style={{ width: 40, height: 40, color: "#10b981", animation: "spin 1s linear infinite" }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-amber-50 p-2 sm:p-4 lg:p-6 xl:p-8 relative overflow-hidden">
       {/* Static leaf emojis positioned around the interface */}
@@ -928,8 +975,8 @@ export default function TeaFactoryDashboard() {
       <div className="relative z-10">
         <div className="bg-white rounded-lg shadow-sm border mb-4 sm:mb-6 lg:mb-8">
           {/* Top section with logo and title */}
-          <div className="flex flex-col sm:flex-row items-center sm:items-center gap-4 p-4 sm:p-6 border-b">
-            <div className="flex justify-center w-full sm:w-auto">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 p-4 sm:p-6 border-b">
+            <div className="flex items-center gap-4">
               <Image
                 src="/sanota-logo.jpg"
                 alt="SANOTA Logo"
@@ -937,16 +984,38 @@ export default function TeaFactoryDashboard() {
                 height={40}
                 className="h-8 sm:h-10 lg:h-12 w-auto flex-shrink-0"
               />
+              <div className="hidden sm:block h-8 w-px bg-gray-200"></div>
+              <div className="hidden sm:block">
+                <h1 className="text-xl sm:text-2xl font-bold text-green-700">
+                  {"Tea Factory Louver Control System"}
+                </h1>
+                <p className="text-xs font-semibold text-teal-600">
+                  {"Every Leaf Deserves Care"}
+                </p>
+              </div>
             </div>
-            <div className="flex-1 min-w-0 text-center">
-              <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold text-green-700">
-                <span className="text-balance leading-tight">{"Tea Factory Louver Control System"}</span>
-              </h1>
 
-              <p className="text-sm sm:text-base lg:text-lg xl:text-xl font-semibold font-sans text-teal-600 mt-2">
-                {"Every Leaf Deserves Care"}
-              </p>
-            </div>
+            {/* User profile & Logout */}
+            {userProfile && (
+              <div className="flex items-center gap-3 bg-green-50 border border-green-100 rounded-xl p-2 px-3 self-stretch md:self-auto justify-between sm:justify-end">
+                <div className="text-left">
+                  <p className="text-xs font-bold text-green-800">{userProfile.name || "User"}</p>
+                  <p className="text-[10px] text-green-600 font-medium uppercase tracking-wider">{userProfile.role}</p>
+                </div>
+                <div className="h-6 w-px bg-green-200"></div>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={async () => {
+                    await signOut(auth);
+                    router.push("/login");
+                  }}
+                  className="text-green-700 hover:text-green-900 hover:bg-green-100/50 p-2 h-8 w-8 rounded-lg flex items-center justify-center"
+                >
+                  <LogOut className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* Status badges and controls section */}

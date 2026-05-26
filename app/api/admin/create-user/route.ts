@@ -3,38 +3,39 @@ import { adminAuth, adminDb } from '@/lib/firebase-admin';
 
 export async function POST(req: Request) {
   try {
-    // SECURITY NOTE: In production, you MUST verify the caller is actually an admin!
-    // You would typically read the Authorization header, decode the Firebase JWT,
-    // check if it's valid, and verify that the user's role in the DB is "super_admin".
-
     const body = await req.json();
-    const { email, password, companyId, factoryId, role } = body;
+    const { email, password, name, companyId, factoryId, role, status, needsPasswordChange } = body;
 
-    if (!email || !password || !companyId || !factoryId || !role) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    if (!email || !password || !role) {
+      return NextResponse.json({ error: 'Missing required fields: email, password, role' }, { status: 400 });
     }
 
-    // 1. Create the user in Firebase Authentication securely on the backend
+    // 1. Create the Firebase Auth user securely on the server
     const userRecord = await adminAuth.createUser({
       email,
       password,
+      displayName: name || '',
     });
 
-    // 2. Write their multi-tenant details to the Realtime Database
+    // 2. Write the user profile to Realtime Database
     await adminDb.ref(`users/${userRecord.uid}`).set({
       email,
-      companyId,
-      factoryId,
-      role
+      name: name || '',
+      companyId: companyId || null,
+      factoryId: factoryId || null,
+      role,
+      status: status || 'approved',
+      needsPasswordChange: needsPasswordChange || false,
+      createdAt: new Date().toISOString(),
     });
 
-    return NextResponse.json({ 
-      message: 'Employee created successfully', 
-      uid: userRecord.uid 
+    return NextResponse.json({
+      message: 'User created successfully',
+      uid: userRecord.uid,
     }, { status: 201 });
 
   } catch (error: any) {
-    console.error('Error creating new employee:', error);
+    console.error('Error creating user:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

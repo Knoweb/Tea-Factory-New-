@@ -51,15 +51,26 @@ export default function LoginPage() {
            return;
         }
 
+        // 3.5 Check for temporary password password change requirement
+        if (userData.needsPasswordChange) {
+           router.push("/change-password");
+           return;
+        }
+
         // 4. Role-based Redirect
         if (userData.role === "super_admin") {
            router.push("/super-admin");
         } else if (userData.role === "company_admin") {
            router.push("/admin");
+        } else if (userData.role === "factory_admin") {
+           router.push("/factory-dashboard");
         } else {
-           router.push("/dashboard"); 
+           router.push("/"); 
         }
-        // Handle case where user auth exists, but no database profile was created
+        return; // Stop execution after redirect
+      } else {
+        // User auth exists but no database profile found
+        await auth.signOut();
         setError("Account profile not found in database. Please contact an administrator.");
       }
     } catch (err: any) {
