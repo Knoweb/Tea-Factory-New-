@@ -351,7 +351,12 @@ export default function RegisterPage() {
                   <ChevronLeft size={16} className="mr-1" /> Previous Step
                 </button>
               ) : (
-                <div /> // Empty div to keep 'Next' button on the right
+                <div className="text-sm text-gray-500">
+                  Already registered?{" "}
+                  <Link href="/login" className="text-emerald-600 font-bold hover:underline">
+                    Login here
+                  </Link>
+                </div>
               )}
 
               {step < 3 ? (
