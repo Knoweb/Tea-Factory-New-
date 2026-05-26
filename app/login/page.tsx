@@ -684,6 +684,13 @@ export default function LoginPage() {
               </button>
             </form>
 
+            <div className="register-row">
+              Don't have an account?{" "}
+              <Link href="/register">
+                Register your company
+              </Link>
+            </div>
+
             <div className="divider" />
 
             <div className="sys-status">
