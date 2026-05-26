@@ -1,0 +1,27 @@
+{
+  "rules": {
+    "users": {
+      ".indexOn": ["companyId", "factoryId"],
+      ".read": "auth != null && (root.child('users/' + auth.uid + '/role').val() === 'super_admin' || root.child('users/' + auth.uid + '/role').val() === 'company_admin' || root.child('users/' + auth.uid + '/role').val() === 'factory_admin')",
+      "$uid": {
+        ".read": "auth != null",
+        ".write": "auth != null && (auth.uid === $uid || root.child('users/' + auth.uid + '/role').val() === 'super_admin' || root.child('users/' + auth.uid + '/role').val() === 'company_admin' || root.child('users/' + auth.uid + '/role').val() === 'factory_admin')"
+      }
+    },
+    "companies": {
+      ".read": "auth != null && (root.child('users/' + auth.uid + '/role').val() === 'super_admin' || root.child('users/' + auth.uid + '/role').val() === 'company_admin')",
+      "$companyId": {
+        ".read": "auth != null",
+        ".write": "auth != null && (!data.exists() || root.child('users/' + auth.uid + '/role').val() === 'super_admin')"
+      }
+    },
+    "factories": {
+      ".indexOn": ["companyId"],
+      ".read": "auth != null && (root.child('users/' + auth.uid + '/role').val() === 'super_admin' || root.child('users/' + auth.uid + '/role').val() === 'company_admin' || root.child('users/' + auth.uid + '/role').val() === 'factory_admin')",
+      "$factoryId": {
+        ".read": "auth != null",
+        ".write": "auth != null && (root.child('users/' + auth.uid + '/role').val() === 'super_admin' || (root.child('users/' + auth.uid + '/role').val() === 'company_admin' && root.child('users/' + auth.uid + '/companyId').val() === newData.child('companyId').val()) || (root.child('users/' + auth.uid + '/role').val() === 'factory_admin' && root.child('users/' + auth.uid + '/factoryId').val() === $factoryId))"
+      }
+    }
+  }
+}
