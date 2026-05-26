@@ -1,5 +1,9 @@
 {
   "rules": {
+    "readings": {
+      ".read": "auth != null",
+      ".write": "true"
+    },
     "users": {
       ".indexOn": ["companyId", "factoryId"],
       ".read": "auth != null && (root.child('users/' + auth.uid + '/role').val() === 'super_admin' || root.child('users/' + auth.uid + '/role').val() === 'company_admin' || root.child('users/' + auth.uid + '/role').val() === 'factory_admin')",

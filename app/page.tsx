@@ -85,7 +85,13 @@ const fetchFirebaseData = async (): Promise<SensorReading | null> => {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
 
-    const response = await fetch(`${firebaseConfig.databaseURL}/readings.json?orderBy="$key"&limitToLast=5`, {
+    const user = auth.currentUser
+    const token = user ? await user.getIdToken() : null
+    const url = token 
+      ? `${firebaseConfig.databaseURL}/readings.json?orderBy="$key"&limitToLast=5&auth=${token}`
+      : `${firebaseConfig.databaseURL}/readings.json?orderBy="$key"&limitToLast=5`
+
+    const response = await fetch(url, {
       signal: controller.signal,
       headers: {
         Accept: "application/json",
@@ -235,14 +241,21 @@ const fetchAllFirebaseData = async (): Promise<SensorReading[]> => {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 30000) // Increased to 30 seconds for mobile
 
+    const user = auth.currentUser
+    const token = user ? await user.getIdToken() : null
+
     let response: Response | null = null
     let retryCount = 0
     const maxRetries = 3
 
     while (retryCount < maxRetries) {
       try {
+        const url = token 
+          ? `${firebaseConfig.databaseURL}/readings.json?auth=${token}`
+          : `${firebaseConfig.databaseURL}/readings.json`
+
         // Fetch without orderBy to get all data - this is more reliable for complete dataset
-        response = await fetch(`${firebaseConfig.databaseURL}/readings.json`, {
+        response = await fetch(url, {
           signal: controller.signal,
           headers: {
             Accept: "application/json",
