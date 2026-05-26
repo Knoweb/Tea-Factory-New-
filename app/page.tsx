@@ -501,7 +501,7 @@ export default function TeaFactoryDashboard() {
         const userData = userSnap.val();
         
         // If they need to change password, redirect to /change-password
-        if (userData.needsPasswordChange) {
+        if (userData.needsPasswordChange === true || userData.needsPasswordChange === "true") {
           router.push("/change-password");
           return;
         }

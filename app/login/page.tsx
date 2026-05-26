@@ -52,7 +52,7 @@ export default function LoginPage() {
         }
 
         // 3.5 Check for temporary password password change requirement
-        if (userData.needsPasswordChange) {
+        if (userData.needsPasswordChange === true || userData.needsPasswordChange === "true") {
            router.push("/change-password");
            return;
         }

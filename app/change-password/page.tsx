@@ -33,7 +33,7 @@ export default function ChangePasswordPage() {
           const userData = snap.val();
           setUserRole(userData.role || "operator");
           // If they don't actually need to change password, redirect them home
-          if (!userData.needsPasswordChange) {
+          if (userData.needsPasswordChange !== true && userData.needsPasswordChange !== "true") {
             redirectHome(userData.role);
             return;
           }
