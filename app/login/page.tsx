@@ -91,382 +91,332 @@ export default function LoginPage() {
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: `
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        .login-root {
+        .split-layout {
           min-height: 100vh;
           width: 100%;
-          position: relative;
           display: flex;
-          align-items: center;
-          justify-content: flex-end;
-          font-family: 'DM Sans', sans-serif;
-          overflow: hidden;
+          font-family: 'Outfit', sans-serif;
+          background: #ffffff;
+          overflow-x: hidden;
         }
 
-        /* Full-screen background */
-        .bg-layer {
-          position: absolute;
-          inset: -5%;
-          background-image: url('/bg.png');
+        /* Left Masonry Panel */
+        .left-panel {
+          flex: 1.1;
+          display: flex;
+          background: #070e0b;
+          padding: 24px;
+          height: 100vh;
+          overflow: hidden;
+          position: relative;
+        }
+
+        .masonry-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          grid-template-rows: repeat(12, 1fr);
+          gap: 20px;
+          width: 100%;
+          height: 100%;
+        }
+
+        .grid-card {
+          border-radius: 28px;
+          overflow: hidden;
+          position: relative;
+          transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+        }
+
+        .grid-card:hover {
+          transform: translateY(-4px) scale(1.01);
+          box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+
+        /* Stat Card: Rich Terracotta Orange */
+        .grid-card.orange-card {
+          grid-row: span 5;
+          background: #f05a30;
+          color: white;
+          padding: 32px;
+          display: flex;
+          flex-direction: column;
+          justify-content: flex-end;
+          border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* Stat Card: Elegant Emerald Green */
+        .grid-card.green-card {
+          grid-row: span 4;
+          background: #10b981;
+          color: white;
+          padding: 32px;
+          display: flex;
+          flex-direction: column;
+          justify-content: flex-end;
+          border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .grid-card.img-estate {
+          grid-row: span 7;
+          background-image: url('/tea_estate_grid.png');
           background-size: cover;
           background-position: center;
-          z-index: 0;
-          animation: slowZoom 25s alternate infinite ease-in-out;
         }
 
-        /* Multi-stop gradient overlay */
-        .overlay {
+        .grid-card.img-leaves {
+          grid-row: span 4;
+          background-image: url('/tea_leaves_grid.png');
+          background-size: cover;
+          background-position: center;
+        }
+
+        .grid-card.img-factory {
+          grid-row: span 4;
+          background-image: url('/tea_factory_grid.png');
+          background-size: cover;
+          background-position: center;
+        }
+
+        /* Image hover zoom overlay */
+        .grid-card::before {
+          content: '';
           position: absolute;
           inset: 0;
-          background: linear-gradient(
-            105deg,
-            rgba(0,0,0,0.18) 0%,
-            rgba(0,0,0,0.30) 40%,
-            rgba(0,10,8,0.82) 100%
-          );
+          background: linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.6) 100%);
           z-index: 1;
         }
 
-        /* Subtle vignette */
-        .vignette {
-          position: absolute;
-          inset: 0;
-          background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.55) 100%);
-          z-index: 2;
+        .grid-card.orange-card::before,
+        .grid-card.green-card::before {
+          display: none;
         }
 
-        /* Brand badge — top-left */
-        .brand-badge {
-          position: absolute;
-          top: 36px;
-          left: 44px;
-          z-index: 10;
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          animation: fadeSlideDown 0.7s ease both;
-        }
-
-        .brand-icon {
-          width: 44px;
-          height: 44px;
-          border-radius: 50%;
-          background: rgba(255,255,255,0.12);
-          border: 1.5px solid rgba(255,255,255,0.28);
-          backdrop-filter: blur(10px);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          animation: brandGlow 4s infinite alternate ease-in-out;
-        }
-
-        @keyframes brandGlow {
-          0% { box-shadow: 0 0 10px rgba(100,255,218,0.1); }
-          100% { box-shadow: 0 0 25px rgba(100,255,218,0.4); }
-        }
-
-        .brand-name {
-          font-family: 'Bebas Neue', sans-serif;
-          font-size: 2.1rem;
-          letter-spacing: 0.12em;
-          color: #fff;
+        .card-stat {
+          font-size: 3.8rem;
+          font-weight: 800;
           line-height: 1;
-          text-shadow: 0 2px 18px rgba(0,0,0,0.4);
-        }
-
-        /* Tagline bottom-left */
-        .tagline {
-          position: absolute;
-          bottom: 48px;
-          left: 44px;
-          z-index: 10;
-          max-width: 480px;
-          animation: fadeSlideUp 0.8s 0.2s ease both;
-        }
-
-        .tagline-sub {
-          font-family: 'Bebas Neue', sans-serif;
-          font-size: 1.55rem;
-          letter-spacing: 0.06em;
-          color: rgba(255,255,255,0.92);
           margin-bottom: 8px;
-          text-shadow: 0 1px 12px rgba(0,0,0,0.5);
+          letter-spacing: -0.03em;
         }
 
-        .tagline-body {
-          font-size: 0.88rem;
-          color: rgba(255,255,255,0.65);
-          line-height: 1.65;
-          font-weight: 300;
-          max-width: 400px;
-        }
-
-        /* Status chips */
-        .status-chips {
-          display: flex;
-          gap: 10px;
-          margin-top: 16px;
-          flex-wrap: wrap;
-        }
-
-        .chip {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          background: rgba(255,255,255,0.08);
-          border: 1px solid rgba(255,255,255,0.15);
-          backdrop-filter: blur(8px);
-          border-radius: 100px;
-          padding: 5px 14px;
-          font-size: 0.75rem;
-          color: rgba(255,255,255,0.8);
-          font-weight: 500;
-          letter-spacing: 0.02em;
-        }
-
-        .chip-dot {
-          width: 7px;
-          height: 7px;
-          border-radius: 50%;
-          background: #00e5c9;
-          box-shadow: 0 0 6px #00e5c9;
-          animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.4; }
-        }
-
-        /* Glass form panel */
-        .glass-panel {
-          position: relative;
-          z-index: 10;
-          width: 420px;
-          margin-right: 15vw;
-          background: rgba(255, 255, 255, 0.07);
-          backdrop-filter: blur(28px) saturate(1.6);
-          -webkit-backdrop-filter: blur(28px) saturate(1.6);
-          border: 1px solid rgba(255,255,255,0.14);
-          border-radius: 24px;
-          overflow: hidden;
-          box-shadow:
-            0 8px 32px rgba(0,0,0,0.45),
-            0 1px 0 rgba(255,255,255,0.12) inset,
-            0 -1px 0 rgba(0,0,0,0.2) inset;
-          animation: fadeSlideLeft 0.75s 0.1s cubic-bezier(0.22, 1, 0.36, 1) both;
-        }
-
-        /* Teal accent bar */
-        .accent-bar {
-          height: 3px;
-          background: linear-gradient(90deg, #009688, #00bfa5, #64ffda, #009688);
-          background-size: 300% 100%;
-          animation: gradientShift 6s ease-in-out infinite;
-        }
-
-        @keyframes gradientShift {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
-        }
-
-        .panel-header {
-          padding: 36px 36px 28px;
-          border-bottom: 1px solid rgba(255,255,255,0.08);
-        }
-
-        .panel-header h2 {
-          font-family: 'Bebas Neue', sans-serif;
-          font-size: 2rem;
-          letter-spacing: 0.06em;
-          color: #fff;
-          line-height: 1;
-          margin-bottom: 6px;
-        }
-
-        .panel-header p {
-          font-size: 0.82rem;
-          color: rgba(255,255,255,0.5);
-          font-weight: 300;
+        .card-text {
+          font-size: 0.95rem;
+          line-height: 1.5;
+          opacity: 0.95;
+          font-weight: 400;
           letter-spacing: 0.01em;
         }
 
-        .panel-body {
-          padding: 28px 36px 36px;
-        }
-
-        /* Tab toggle */
-        .tab-toggle {
+        /* Right Form Panel */
+        .right-panel {
+          flex: 0.9;
+          background: #ffffff;
           display: flex;
-          background: rgba(0,0,0,0.25);
-          border: 1px solid rgba(255,255,255,0.1);
+          flex-direction: column;
+          justify-content: space-between;
+          padding: 40px;
+          position: relative;
+          min-height: 100vh;
+        }
+
+        /* Form Header bar (Sign Up link) */
+        .header-nav {
+          display: flex;
+          justify-content: flex-end;
+          align-items: center;
+          gap: 12px;
+          font-size: 0.9rem;
+          color: #6b7280;
+        }
+
+        .signup-btn {
+          padding: 8px 20px;
           border-radius: 12px;
-          padding: 4px;
-          margin-bottom: 28px;
-          gap: 4px;
-        }
-
-        .tab-btn {
-          flex: 1;
-          text-align: center;
-          padding: 9px 0;
-          border-radius: 8px;
-          font-size: 0.82rem;
+          border: 1px solid #e5e7eb;
+          background: #f9fafb;
+          color: #1f2937;
           font-weight: 600;
-          letter-spacing: 0.03em;
           text-decoration: none;
-          transition: all 0.22s ease;
-          cursor: pointer;
+          transition: all 0.2s ease;
         }
 
-        .tab-btn.active {
-          background: rgba(0,150,136,0.85);
-          color: #fff;
-          box-shadow: 0 2px 12px rgba(0,150,136,0.4);
+        .signup-btn:hover {
+          background: #f3f4f6;
+          border-color: #d1d5db;
         }
 
-        .tab-btn.inactive {
-          color: rgba(255,255,255,0.45);
+        /* Middle Form Container */
+        .form-container {
+          max-width: 420px;
+          width: 100%;
+          margin: auto;
+          display: flex;
+          flex-direction: column;
+          gap: 32px;
         }
 
-        .tab-btn.inactive:hover {
-          color: rgba(255,255,255,0.75);
-          background: rgba(255,255,255,0.06);
+        .brand-header {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          color: #10b981;
+          margin-bottom: -16px;
         }
 
-        /* Form fields */
+        .brand-name {
+          font-size: 1.6rem;
+          font-weight: 800;
+          letter-spacing: 0.05em;
+          color: #111827;
+        }
+
+        .form-title h1 {
+          font-size: 2.2rem;
+          font-weight: 800;
+          color: #111827;
+          letter-spacing: -0.02em;
+          line-height: 1.25;
+        }
+
+        .form-title h1 span {
+          color: #10b981;
+        }
+
+        .form-title p {
+          font-size: 0.95rem;
+          color: #6b7280;
+          margin-top: 10px;
+          line-height: 1.5;
+        }
+
+        /* Fields input */
         .field-group {
-          margin-bottom: 18px;
+          margin-bottom: 20px;
         }
 
         .field-label {
           display: block;
-          font-size: 0.75rem;
+          font-size: 0.82rem;
           font-weight: 600;
-          color: rgba(255,255,255,0.6);
-          letter-spacing: 0.08em;
-          text-transform: uppercase;
+          color: #374151;
           margin-bottom: 8px;
+          letter-spacing: 0.01em;
         }
 
         .field-wrapper {
           position: relative;
         }
 
-        .field-icon {
-          position: absolute;
-          left: 14px;
-          top: 50%;
-          transform: translateY(-50%);
-          color: rgba(255,255,255,0.35);
-          pointer-events: none;
-          display: flex;
-        }
-
         .field-input {
           width: 100%;
-          background: rgba(255,255,255,0.07) !important;
-          border: 1px solid rgba(255,255,255,0.12) !important;
-          border-radius: 10px !important;
-          height: 48px !important;
-          padding-left: 44px !important;
-          padding-right: 14px !important;
-          font-size: 0.88rem !important;
-          color: #fff !important;
-          font-family: 'DM Sans', sans-serif !important;
-          transition: border-color 0.2s, box-shadow 0.2s !important;
+          background: #ffffff !important;
+          border: 1.5px solid #e5e7eb !important;
+          border-radius: 14px !important;
+          height: 52px !important;
+          padding-left: 20px !important;
+          padding-right: 20px !important;
+          font-size: 0.95rem !important;
+          color: #1f2937 !important;
+          font-family: 'Outfit', sans-serif !important;
+          transition: all 0.2s ease !important;
+          outline: none !important;
         }
 
         .field-input::placeholder {
-          color: rgba(255,255,255,0.25) !important;
+          color: #9ca3af !important;
         }
 
         .field-input:focus {
-          outline: none !important;
-          border-color: rgba(0,150,136,0.7) !important;
-          box-shadow: 0 0 0 3px rgba(0,150,136,0.15) !important;
-          background: rgba(255,255,255,0.10) !important;
+          border-color: #10b981 !important;
+          box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.12) !important;
+          background: #ffffff !important;
         }
 
+        /* Password eye toggle */
         .eye-toggle {
           position: absolute;
-          right: 14px;
+          right: 18px;
           top: 50%;
           transform: translateY(-50%);
           background: none;
           border: none;
           cursor: pointer;
-          color: rgba(255,255,255,0.35);
+          color: #9ca3af;
           display: flex;
           padding: 0;
           transition: color 0.2s;
         }
 
-        .eye-toggle:hover { color: rgba(255,255,255,0.7); }
+        .eye-toggle:hover {
+          color: #374151;
+        }
 
         .forgot-row {
           display: flex;
           justify-content: flex-end;
           margin-bottom: 24px;
-          margin-top: -8px;
+          margin-top: -12px;
         }
 
         .forgot-link {
-          font-size: 0.78rem;
-          color: rgba(0,230,200,0.85);
-          font-weight: 500;
+          font-size: 0.88rem;
+          color: #10b981;
+          font-weight: 600;
           text-decoration: none;
-          letter-spacing: 0.01em;
           transition: color 0.2s;
         }
 
-        .forgot-link:hover { color: #64ffda; }
+        .forgot-link:hover {
+          color: #059669;
+          text-decoration: underline;
+        }
 
-        /* Submit button */
+        /* Primary Emerald Submit Button */
         .submit-btn {
           width: 100%;
-          height: 50px;
-          background: linear-gradient(135deg, #009688 0%, #00bfa5 100%);
+          height: 54px;
+          background: #10b981;
           border: none;
-          border-radius: 12px;
-          color: #fff;
-          font-family: 'DM Sans', sans-serif;
-          font-size: 0.9rem;
+          border-radius: 16px;
+          color: #ffffff;
+          font-family: 'Outfit', sans-serif;
+          font-size: 1rem;
           font-weight: 700;
-          letter-spacing: 0.04em;
           cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
           gap: 8px;
-          box-shadow: 0 4px 20px rgba(0,150,136,0.4), 0 1px 0 rgba(255,255,255,0.15) inset;
-          transition: all 0.22s ease;
-          position: relative;
-          overflow: hidden;
-          text-transform: uppercase;
+          box-shadow: 0 10px 25px rgba(16, 185, 129, 0.25);
+          transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        .submit-btn::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background: linear-gradient(135deg, rgba(255,255,255,0.12), transparent);
-          opacity: 0;
-          transition: opacity 0.22s;
+        .submit-btn:hover {
+          background: #059669;
+          transform: translateY(-2px);
+          box-shadow: 0 15px 30px rgba(16, 185, 129, 0.35);
         }
 
-        .submit-btn:hover::before { opacity: 1; }
-        .submit-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 26px rgba(0,150,136,0.5); }
-        .submit-btn:active { transform: translateY(0); }
-        .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .submit-btn:active {
+          transform: translateY(0);
+        }
+
+        .submit-btn:disabled {
+          background: #a7f3d0;
+          color: #ffffff;
+          cursor: not-allowed;
+          transform: none;
+          box-shadow: none;
+        }
 
         /* Loading spinner */
         .spinner {
-          width: 16px; height: 16px;
+          width: 18px; height: 18px;
           border: 2px solid rgba(255,255,255,0.3);
           border-top-color: #fff;
           border-radius: 50%;
@@ -475,157 +425,149 @@ export default function LoginPage() {
 
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        .register-row {
-          text-align: center;
-          margin-top: 22px;
-          font-size: 0.8rem;
-          color: rgba(255,255,255,0.38);
-        }
-
-        .register-row a {
-          color: rgba(0,230,200,0.85);
-          font-weight: 600;
-          text-decoration: none;
-          transition: color 0.2s;
-        }
-
-        .register-row a:hover { color: #64ffda; }
-
         /* Error box */
         .error-box {
-          background: rgba(239,68,68,0.12);
-          border: 1px solid rgba(239,68,68,0.35);
-          border-radius: 10px;
-          padding: 11px 14px;
-          font-size: 0.8rem;
-          color: #fca5a5;
+          background: #fef2f2;
+          border: 1.5px solid #fca5a5;
+          border-radius: 14px;
+          padding: 14px;
+          font-size: 0.88rem;
+          color: #b91c1c;
           text-align: center;
-          margin-bottom: 18px;
+          margin-bottom: 24px;
+          font-weight: 500;
         }
 
         /* Divider line */
-        .divider {
-          height: 1px;
-          background: rgba(255,255,255,0.07);
-          margin: 22px 0;
+        .divider-container {
+          display: flex;
+          align-items: center;
+          text-align: center;
+          margin: 24px 0;
+          width: 100%;
         }
 
-        /* System indicators */
-        .sys-status {
+        .divider-container::before,
+        .divider-container::after {
+          content: '';
+          flex: 1;
+          border-bottom: 1.5px solid #e5e7eb;
+        }
+
+        .divider-text {
+          margin: 0 15px;
+          font-size: 0.8rem;
+          color: #9ca3af;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+
+        /* Secondary registration button */
+        .register-company-btn {
+          width: 100%;
+          height: 52px;
+          background: #ffffff;
+          border: 1.5px solid #e5e7eb;
+          border-radius: 16px;
+          color: #374151;
+          font-family: 'Outfit', sans-serif;
+          font-size: 0.95rem;
+          font-weight: 600;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          text-decoration: none;
+          transition: all 0.2s ease;
+          gap: 10px;
+        }
+
+        .register-company-btn:hover {
+          background: #f9fafb;
+          border-color: #d1d5db;
+          color: #111827;
+        }
+
+        /* Footer */
+        .footer-info {
           display: flex;
           justify-content: space-between;
-          align-items: center;
+          font-size: 0.8rem;
+          color: #9ca3af;
+          font-weight: 500;
         }
 
-        .sys-label {
-          font-size: 0.72rem;
-          color: rgba(255,255,255,0.28);
-          letter-spacing: 0.04em;
-        }
-
-        .sys-live {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          font-size: 0.72rem;
-          color: rgba(100,255,210,0.7);
-          font-weight: 600;
-          letter-spacing: 0.04em;
-        }
-
-        .live-dot {
-          width: 6px; height: 6px;
-          border-radius: 50%;
-          background: #64ffda;
-          box-shadow: 0 0 6px #64ffda;
-          animation: pulse 1.8s infinite;
-        }
-
-        /* Copyright */
-        .copyright {
-          position: absolute;
-          bottom: 24px;
-          right: 64px;
-          z-index: 10;
-          font-size: 0.72rem;
-          color: rgba(255,255,255,0.22);
-          letter-spacing: 0.04em;
-          animation: fadeSlideUp 0.8s 0.4s ease both;
-        }
-
-        /* Animations */
-        @keyframes fadeSlideLeft {
-          from { opacity: 0; transform: translateX(40px); }
-          to { opacity: 1; transform: translateX(0); }
-        }
-
-        @keyframes fadeSlideDown {
-          from { opacity: 0; transform: translateY(-20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes fadeSlideUp {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes slowZoom {
-          0% { transform: scale(1); }
-          100% { transform: scale(1.08); }
-        }
-
-        /* Mobile */
-        @media (max-width: 640px) {
-          .glass-panel {
-            width: 100%;
-            margin: 20px;
-            margin-right: 20px;
+        /* Mobile Responsive */
+        @media (max-width: 1024px) {
+          .left-panel {
+            display: none;
           }
-          .brand-badge { left: 20px; top: 20px; }
-          .tagline { display: none; }
-          .copyright { right: 20px; }
+          .right-panel {
+            flex: 1;
+            padding: 30px;
+          }
         }
       `}} />
 
-      <div className="login-root">
-        {/* Full-screen background */}
-        <div className="bg-layer" />
-        <div className="overlay" />
-        <div className="vignette" />
+      <div className="split-layout">
+        
+        {/* Left Side: Masonry Grid Layout (Tea Estate & Analytics) */}
+        <div className="left-panel">
+          <div className="masonry-grid">
+            
+            {/* Stat Card 1 (Orange, Row span 5) */}
+            <div className="grid-card orange-card">
+              <div className="card-stat">85%</div>
+              <div className="card-text">
+                of premium tea leaf quality is determined during the crucial withering stage.
+              </div>
+            </div>
 
-        {/* Brand badge */}
-        <div className="brand-badge">
-          <div className="brand-icon">
-            <Leaf style={{ width: 20, height: 20, color: '#64ffda' }} />
+            {/* Image Card 2 (Tea Leaves Bud, Row span 4) */}
+            <div className="grid-card img-leaves" />
+
+            {/* Image Card 3 (Terraced Tea Estate, Row span 7) */}
+            <div className="grid-card img-estate" />
+
+            {/* Stat Card 4 (Emerald Green, Row span 4) */}
+            <div className="grid-card green-card">
+              <div className="card-stat">24/7</div>
+              <div className="card-text">
+                automated monitoring of temperature, relative humidity, and louver status.
+              </div>
+            </div>
+
+            {/* Image Card 5 (Factory Machinery, Row span 4) */}
+            <div className="grid-card img-factory" />
+
           </div>
-          <span className="brand-name">SANOTA</span>
         </div>
 
-        {/* Bottom-left tagline */}
-        <div className="tagline">
-          <div className="tagline-sub">Tea Factory Louver Control System</div>
-          <p className="tagline-body">
-            Precision automated control for optimal tea withering. Monitor and adjust louvers
-            in real-time for perfect air circulation, temperature, and humidity.
-          </p>
-          <div className="status-chips">
-            <div className="chip"><span className="chip-dot" />System Online</div>
-            <div className="chip">12 Active Zones</div>
-            <div className="chip">Auto Mode</div>
-          </div>
-        </div>
-
-        {/* Glass login panel */}
-        <div className="glass-panel" >
-          <div className="accent-bar" />
-
-          <div className="panel-header">
-            <h2>Welcome Back</h2>
-            <p>Sign in to access the control panel</p>
+        {/* Right Side: Clean, High-Contrast Light Form */}
+        <div className="right-panel">
+          
+          {/* Header Action */}
+          <div className="header-nav">
+            <span>Don't have an account?</span>
+            <Link href="/register" className="signup-btn">
+              Sign up
+            </Link>
           </div>
 
-          <div className="panel-body">
-            {/* Tab toggle removed for Option 3 (Admin-only creation) */}
+          {/* Form Content */}
+          <div className="form-container">
+            
+            <div>
+              <div className="brand-header">
+                <Leaf size={24} fill="#10b981" />
+                <span className="brand-name">SANOTA</span>
+              </div>
+            </div>
+
+            <div className="form-title">
+              <h1>Sign in to <span>SANOTA</span></h1>
+              <p>Welcome back! Please enter your credentials below to access your organizational dashboard.</p>
+            </div>
 
             {error && <div className="error-box">{error}</div>}
 
@@ -633,11 +575,10 @@ export default function LoginPage() {
               <div className="field-group">
                 <label className="field-label" htmlFor="email">Email Address</label>
                 <div className="field-wrapper">
-                  <span className="field-icon"><Mail size={16} /></span>
                   <input
                     id="email"
                     type="email"
-                    placeholder="admin@sanota.com"
+                    placeholder="name@company.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -649,7 +590,6 @@ export default function LoginPage() {
               <div className="field-group">
                 <label className="field-label" htmlFor="password">Password</label>
                 <div className="field-wrapper">
-                  <span className="field-icon"><Lock size={16} /></span>
                   <input
                     id="password"
                     type={showPassword ? "text" : "password"}
@@ -658,7 +598,6 @@ export default function LoginPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     className="field-input"
-                    style={{ paddingRight: '44px' }}
                   />
                   <button
                     type="button"
@@ -666,7 +605,7 @@ export default function LoginPage() {
                     onClick={() => setShowPassword(!showPassword)}
                     tabIndex={-1}
                   >
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
               </div>
@@ -679,28 +618,30 @@ export default function LoginPage() {
                 {loading ? (
                   <><div className="spinner" /> Signing in...</>
                 ) : (
-                  <>Sign In <ArrowRight size={16} /></>
+                  <>Sign In <ArrowRight size={18} /></>
                 )}
               </button>
             </form>
 
-            <div className="register-row">
-              Don't have an account?{" "}
-              <Link href="/register">
-                Register your company
-              </Link>
+            <div className="divider-container">
+              <span className="divider-text">or</span>
             </div>
 
-            <div className="divider" />
+            <Link href="/register" className="register-company-btn">
+              <Leaf size={18} className="text-emerald-500" />
+              Register your company
+            </Link>
 
-            <div className="sys-status">
-              <span className="sys-label">© 2026 SANOTA</span>
-              <span className="sys-live"><span className="live-dot" />LIVE</span>
-            </div>
-
-            {/* Public registration removed for Admin-Only access */}
           </div>
+
+          {/* Footer Info */}
+          <div className="footer-info">
+            <span>© 2026 SANOTA Technology</span>
+            <span>SYSTEM ONLINE</span>
+          </div>
+
         </div>
+
       </div>
     </>
   );
