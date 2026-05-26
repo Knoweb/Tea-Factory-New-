@@ -54,8 +54,8 @@ export function LouverStatusChart({ data }: LouverStatusChartProps) {
   const openPercentage = ((openReadings / totalReadings) * 100).toFixed(1)
   const avgDepression = (sortedData.reduce((sum, r) => sum + r.depression, 0) / totalReadings).toFixed(1)
 
-  const statusSegments = []
-  let currentStatus = null
+  const statusSegments: { start: number; end: number; status: string; duration: number }[] = []
+  let currentStatus: string | null = null
   let segmentStart = 0
 
   chartData.forEach((point, index) => {
@@ -259,3 +259,5 @@ export function LouverStatusChart({ data }: LouverStatusChartProps) {
     </Card>
   )
 }
+
+
