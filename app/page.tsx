@@ -18,6 +18,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,11 +55,13 @@ export default function LoginPage() {
 
         // 3.5 Check for temporary password change requirement
         if (userData.needsPasswordChange === true || userData.needsPasswordChange === "true") {
+           setRedirecting(true);
            router.push("/change-password");
            return;
         }
 
         // 4. Role-based Redirect
+        setRedirecting(true);
         if (userData.role === "super_admin") {
            router.push("/super-admin");
         } else if (userData.role === "company_admin") {
@@ -88,6 +91,30 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
+
+  if (redirecting) {
+    return (
+      <div style={{
+        minHeight: "100vh",
+        background: "#0e563f",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: "20px",
+        fontFamily: "'Plus Jakarta Sans', sans-serif"
+      }}>
+        <Loader2 style={{ width: 48, height: 48, color: "#10b981", animation: "spin 1s linear infinite" }} />
+        <h2 style={{ color: "#ffffff", fontSize: "1.4rem", fontWeight: 700, letterSpacing: "-0.01em" }}>
+          Access Granted
+        </h2>
+        <p style={{ color: "#a7f3d0", fontSize: "0.95rem", opacity: 0.9 }}>
+          Preparing your personalized dashboard...
+        </p>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
 
   if (checkingAuth) {
     return (
