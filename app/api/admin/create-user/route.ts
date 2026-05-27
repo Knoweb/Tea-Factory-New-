@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
+import { sendTemporaryPasswordEmail } from '@/lib/mailer';
 
 export async function POST(req: Request) {
   try {
@@ -27,6 +28,14 @@ export async function POST(req: Request) {
       status: status || 'approved',
       needsPasswordChange: needsPasswordChange || false,
       createdAt: new Date().toISOString(),
+    });
+
+    // 3. Dispatch Temporary Password Email to the newly registered worker
+    await sendTemporaryPasswordEmail({
+      to: email,
+      subject: "Welcome to SANOTA - Your Temporary Credentials",
+      name: name || "User",
+      temporaryPassword: password,
     });
 
     return NextResponse.json({

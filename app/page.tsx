@@ -494,6 +494,11 @@ export default function TeaFactoryDashboard() {
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    // Optimistically authorize from localStorage to make page navigation instant
+    if (typeof window !== "undefined" && localStorage.getItem("userRole")) {
+      setAuthLoading(false);
+    }
+
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       if (!user) {
         router.push("/login");

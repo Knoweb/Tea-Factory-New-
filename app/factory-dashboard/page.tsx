@@ -29,10 +29,19 @@ export default function FactoryDashboardPage() {
   const [addSuccess, setAddSuccess] = useState("");
 
   useEffect(() => {
+    // Optimistically authorize from localStorage to make page navigation instant
+    if (typeof window !== "undefined" && localStorage.getItem("userRole") === "factory_admin") {
+      setLoading(false);
+    }
+
+    let unsubscribeWorkers: (() => void) | null = null;
+
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       if (!user) { router.push("/login"); return; }
 
       try {
+        if (unsubscribeWorkers) unsubscribeWorkers();
+
         const timeout = new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error("timeout")), 8000)
         );
@@ -64,7 +73,7 @@ export default function FactoryDashboardPage() {
           orderByChild("factoryId"),
           equalTo(factoryId)
         );
-        onValue(workersQuery, (snap) => {
+        unsubscribeWorkers = onValue(workersQuery, (snap) => {
           if (snap.exists()) {
             const obj = snap.val();
             const list = Object.keys(obj)
@@ -84,7 +93,11 @@ export default function FactoryDashboardPage() {
         setLoading(false);
       }
     });
-    return () => unsubscribeAuth();
+
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeWorkers) unsubscribeWorkers();
+    };
   }, [router]);
 
   const handleAddWorker = async (e: React.FormEvent) => {
@@ -130,8 +143,8 @@ export default function FactoryDashboardPage() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: "100vh", background: "#0a1628", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <Loader2 style={{ width: 40, height: 40, color: "#10b981", animation: "spin 1s linear infinite" }} />
+      <div style={{ minHeight: "100vh", background: "#e1ede9", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <Loader2 style={{ width: 40, height: 40, color: "#0e563f", animation: "spin 1s linear infinite" }} />
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
@@ -139,7 +152,7 @@ export default function FactoryDashboardPage() {
 
   if (error) {
     return (
-      <div style={{ minHeight: "100vh", background: "#0a1628", display: "flex", alignItems: "center", justifyContent: "center", color: "#f87171", fontFamily: "sans-serif", padding: 20, textAlign: "center" }}>
+      <div style={{ minHeight: "100vh", background: "#e1ede9", display: "flex", alignItems: "center", justifyContent: "center", color: "#b91c1c", fontFamily: "'Plus Jakarta Sans', sans-serif", padding: 20, textAlign: "center", fontWeight: 600 }}>
         {error}
       </div>
     );
@@ -148,58 +161,64 @@ export default function FactoryDashboardPage() {
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: `
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;1,700&display=swap');
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes fadeUp { from { opacity:0;transform:translateY(16px); } to { opacity:1;transform:translateY(0); } }
         @keyframes slideIn { from { opacity:0;transform:translateX(20px); } to { opacity:1;transform:translateX(0); } }
 
-        body { background: #0a1628; }
+        body { background: #e1ede9; }
 
-        .fd-root { min-height: 100vh; background: #0a1628; color: #e2e8f0; font-family: 'DM Sans', sans-serif; }
+        .fd-root { min-height: 100vh; background: #e1ede9; color: #1c2e2a; font-family: 'Plus Jakarta Sans', sans-serif; }
 
         /* Navbar */
         .fd-nav {
           position: sticky; top: 0; z-index: 50;
-          background: rgba(10,22,40,0.95);
+          background: rgba(255,255,255,0.9);
           backdrop-filter: blur(20px);
-          border-bottom: 1px solid rgba(255,255,255,0.08);
+          border-bottom: 1.5px solid rgba(14, 86, 63, 0.08);
           padding: 0 40px;
-          height: 68px;
+          height: 72px;
           display: flex; align-items: center; justify-content: space-between;
+          box-shadow: 0 4px 20px rgba(14, 86, 63, 0.02);
         }
         .fd-brand { display: flex; align-items: center; gap: 12px; }
         .fd-brand-icon {
-          width: 40px; height: 40px; border-radius: 10px;
-          background: linear-gradient(135deg, #10b981, #059669);
+          width: 42px; height: 42px; border-radius: 12px;
+          background: linear-gradient(135deg, #0e563f, #15825f);
           display: flex; align-items: center; justify-content: center;
+          box-shadow: 0 4px 12px rgba(14, 86, 63, 0.2);
         }
         .fd-brand-text h1 {
-          font-family: 'Bebas Neue', sans-serif;
-          font-size: 1.5rem; letter-spacing: 0.1em; color: #fff; line-height: 1;
+          font-family: 'Plus Jakarta Sans', sans-serif;
+          font-weight: 800;
+          font-size: 1.3rem; letter-spacing: 0.05em; color: #0e563f; line-height: 1;
         }
-        .fd-brand-text p { font-size: 0.72rem; color: #10b981; letter-spacing: 0.06em; text-transform: uppercase; }
+        .fd-brand-text p { font-size: 0.72rem; color: #15825f; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
 
         .fd-nav-right { display: flex; align-items: center; gap: 16px; }
         .fd-factory-badge {
-          background: rgba(16,185,129,0.1);
-          border: 1px solid rgba(16,185,129,0.2);
+          background: rgba(14, 86, 63, 0.06);
+          border: 1px solid rgba(14, 86, 63, 0.15);
           border-radius: 8px;
           padding: 6px 14px;
           font-size: 0.85rem;
-          color: #34d399;
-          font-weight: 500;
+          color: #0e563f;
+          font-weight: 600;
         }
         .fd-logout-btn {
           display: flex; align-items: center; gap: 6px;
-          background: rgba(255,255,255,0.05);
-          border: 1px solid rgba(255,255,255,0.1);
-          color: rgba(255,255,255,0.7);
+          background: #fff;
+          border: 1px solid rgba(14, 86, 63, 0.12);
+          color: #0e563f;
           padding: 8px 16px; border-radius: 8px;
           font-size: 0.88rem; cursor: pointer;
-          transition: all 0.2s; font-family: 'DM Sans', sans-serif;
+          transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+          font-family: 'Plus Jakarta Sans', sans-serif;
+          font-weight: 600;
+          box-shadow: 0 2px 6px rgba(14, 86, 63, 0.02);
         }
-        .fd-logout-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+        .fd-logout-btn:hover { background: #0e563f; color: #fff; border-color: #0e563f; transform: translateY(-1px); }
 
         /* Main layout */
         .fd-main { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
@@ -207,31 +226,36 @@ export default function FactoryDashboardPage() {
         /* Header */
         .fd-header { margin-bottom: 36px; animation: fadeUp 0.5s ease both; }
         .fd-header h2 {
-          font-family: 'Bebas Neue', sans-serif;
-          font-size: 2.8rem; letter-spacing: 0.06em;
-          color: #fff; line-height: 1; margin-bottom: 6px;
+          font-family: 'Playfair Display', serif;
+          font-weight: 700;
+          font-size: 2.5rem; letter-spacing: -0.02em;
+          color: #0e563f; line-height: 1.1; margin-bottom: 8px;
         }
-        .fd-header p { color: rgba(255,255,255,0.5); font-size: 0.95rem; }
+        .fd-header p { color: rgba(14, 86, 63, 0.6); font-size: 0.95rem; font-weight: 500; }
 
         /* Stats */
         .fd-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 36px; }
         .fd-stat {
-          background: rgba(255,255,255,0.04);
-          border: 1px solid rgba(255,255,255,0.08);
+          background: #fff;
+          border: 1.5px solid rgba(14, 86, 63, 0.08);
           border-radius: 16px;
           padding: 24px;
+          box-shadow: 0 4px 20px rgba(14, 86, 63, 0.02);
+          transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
           animation: fadeUp 0.5s ease both;
         }
+        .fd-stat:hover { transform: translateY(-3px); border-color: rgba(14, 86, 63, 0.2); box-shadow: 0 8px 30px rgba(14, 86, 63, 0.06); }
         .fd-stat:nth-child(2) { animation-delay: 0.1s; }
         .fd-stat:nth-child(3) { animation-delay: 0.2s; }
         .fd-stat-val {
-          font-family: 'Bebas Neue', sans-serif;
-          font-size: 3.5rem; color: #10b981; line-height: 1; margin-bottom: 6px;
+          font-family: 'Plus Jakarta Sans', sans-serif;
+          font-weight: 800;
+          font-size: 3rem; color: #0e563f; line-height: 1; margin-bottom: 6px;
         }
         .fd-stat-label {
           font-size: 0.78rem; font-weight: 700;
-          color: rgba(255,255,255,0.5);
-          text-transform: uppercase; letter-spacing: 0.1em;
+          color: rgba(14, 86, 63, 0.5);
+          text-transform: uppercase; letter-spacing: 0.08em;
         }
 
         /* Content grid */
@@ -239,70 +263,75 @@ export default function FactoryDashboardPage() {
 
         /* Workers list panel */
         .fd-panel {
-          background: rgba(255,255,255,0.03);
-          border: 1px solid rgba(255,255,255,0.08);
+          background: #fff;
+          border: 1.5px solid rgba(14, 86, 63, 0.08);
           border-radius: 16px;
           overflow: hidden;
+          box-shadow: 0 4px 20px rgba(14, 86, 63, 0.02);
           animation: fadeUp 0.5s 0.2s ease both;
         }
         .fd-panel-header {
           padding: 20px 24px;
-          border-bottom: 1px solid rgba(255,255,255,0.06);
+          border-bottom: 1.5px solid rgba(14, 86, 63, 0.06);
           display: flex; align-items: center; justify-content: space-between;
+          background: rgba(14, 86, 63, 0.02);
         }
-        .fd-panel-header h3 { font-size: 1.05rem; font-weight: 600; color: #fff; }
-        .fd-panel-header span { font-size: 0.82rem; color: rgba(255,255,255,0.4); }
+        .fd-panel-header h3 { font-size: 1.05rem; font-weight: 700; color: #0e563f; }
+        .fd-panel-header span { font-size: 0.82rem; color: rgba(14, 86, 63, 0.5); font-weight: 600; }
 
         .fd-worker-row {
           display: flex; align-items: center;
-          padding: 14px 24px;
-          border-bottom: 1px solid rgba(255,255,255,0.04);
+          padding: 16px 24px;
+          border-bottom: 1px solid rgba(14, 86, 63, 0.05);
           transition: background 0.15s;
         }
         .fd-worker-row:last-child { border-bottom: none; }
-        .fd-worker-row:hover { background: rgba(255,255,255,0.03); }
+        .fd-worker-row:hover { background: rgba(14, 86, 63, 0.02); }
         .fd-worker-avatar {
-          width: 38px; height: 38px; border-radius: 10px;
-          background: rgba(16,185,129,0.15);
-          color: #10b981;
+          width: 40px; height: 40px; border-radius: 10px;
+          background: rgba(14, 86, 63, 0.08);
+          color: #0e563f;
           display: flex; align-items: center; justify-content: center;
-          font-weight: 700; font-size: 0.95rem; margin-right: 14px; flex-shrink: 0;
+          font-weight: 800; font-size: 0.95rem; margin-right: 14px; flex-shrink: 0;
           text-transform: uppercase;
         }
         .fd-worker-info { flex: 1; }
-        .fd-worker-info h4 { font-size: 0.95rem; font-weight: 600; color: #fff; margin-bottom: 2px; }
-        .fd-worker-info p { font-size: 0.78rem; color: rgba(255,255,255,0.45); }
+        .fd-worker-info h4 { font-size: 0.95rem; font-weight: 700; color: #0e563f; margin-bottom: 2px; }
+        .fd-worker-info p { font-size: 0.78rem; color: rgba(14, 86, 63, 0.5); font-weight: 500; }
         .fd-role-badge {
-          font-size: 0.72rem; font-weight: 600;
+          font-size: 0.72rem; font-weight: 700;
           padding: 4px 10px; border-radius: 100px;
-          background: rgba(16,185,129,0.1);
-          color: #34d399;
-          border: 1px solid rgba(16,185,129,0.2);
+          background: rgba(14, 86, 63, 0.06);
+          color: #0e563f;
+          border: 1px solid rgba(14, 86, 63, 0.12);
           text-transform: capitalize;
         }
 
         .fd-empty {
           padding: 48px 24px;
           text-align: center;
-          color: rgba(255,255,255,0.3);
+          color: rgba(14, 86, 63, 0.4);
           font-size: 0.9rem;
+          font-weight: 500;
         }
 
         /* Add worker panel */
         .fd-add-panel {
-          background: rgba(255,255,255,0.03);
-          border: 1px solid rgba(255,255,255,0.08);
+          background: #fff;
+          border: 1.5px solid rgba(14, 86, 63, 0.08);
           border-radius: 16px;
           overflow: hidden;
+          box-shadow: 0 4px 20px rgba(14, 86, 63, 0.02);
           animation: slideIn 0.5s 0.3s ease both;
           height: fit-content;
         }
         .fd-add-header {
           padding: 20px 24px;
-          border-bottom: 1px solid rgba(255,255,255,0.06);
+          border-bottom: 1.5px solid rgba(14, 86, 63, 0.06);
           display: flex; align-items: center; gap: 10px;
+          background: rgba(14, 86, 63, 0.02);
         }
-        .fd-add-header h3 { font-size: 1.05rem; font-weight: 600; color: #fff; }
+        .fd-add-header h3 { font-size: 1.05rem; font-weight: 700; color: #0e563f; }
         .fd-add-body { padding: 24px; }
 
         .fd-field { margin-bottom: 18px; }
@@ -310,60 +339,64 @@ export default function FactoryDashboardPage() {
           display: block;
           font-size: 0.75rem; font-weight: 700;
           text-transform: uppercase; letter-spacing: 0.08em;
-          color: rgba(255,255,255,0.6);
+          color: rgba(14, 86, 63, 0.6);
           margin-bottom: 8px;
         }
         .fd-field input, .fd-field select {
           width: 100%;
-          background: rgba(0,0,0,0.3);
-          border: 1px solid rgba(255,255,255,0.1);
+          background: #fff;
+          border: 1.5px solid rgba(14, 86, 63, 0.12);
           border-radius: 10px;
           padding: 12px 14px;
-          color: #fff;
+          color: #0e563f;
           font-size: 0.9rem;
-          font-family: 'DM Sans', sans-serif;
-          transition: all 0.2s;
+          font-family: 'Plus Jakarta Sans', sans-serif;
+          font-weight: 500;
+          transition: all 0.22s ease;
         }
         .fd-field input:focus, .fd-field select:focus {
           outline: none;
-          border-color: #10b981;
-          box-shadow: 0 0 0 3px rgba(16,185,129,0.1);
-          background: rgba(0,0,0,0.4);
+          border-color: #0e563f;
+          box-shadow: 0 0 0 3.5px rgba(14, 86, 63, 0.08);
+          background: #fff;
         }
-        .fd-field input::placeholder { color: rgba(255,255,255,0.25); }
-        .fd-field select option { background: #1e293b; }
+        .fd-field input::placeholder { color: rgba(14, 86, 63, 0.3); }
+        .fd-field select option { background: #fff; color: #0e563f; }
 
         .fd-add-error {
-          background: rgba(239,68,68,0.1);
-          border: 1px solid rgba(239,68,68,0.2);
-          color: #fca5a5;
+          background: rgba(239,68,68,0.06);
+          border: 1px solid rgba(239,68,68,0.15);
+          color: #b91c1c;
           padding: 10px 14px;
           border-radius: 8px;
           font-size: 0.84rem;
+          font-weight: 600;
           margin-bottom: 14px;
         }
         .fd-add-success {
-          background: rgba(16,185,129,0.1);
-          border: 1px solid rgba(16,185,129,0.2);
-          color: #34d399;
+          background: rgba(14, 86, 63, 0.06);
+          border: 1px solid rgba(14, 86, 63, 0.15);
+          color: #0e563f;
           padding: 10px 14px;
           border-radius: 8px;
           font-size: 0.84rem;
+          font-weight: 600;
           margin-bottom: 14px;
           display: flex; align-items: center; gap: 8px;
         }
 
         .fd-submit {
           width: 100%;
-          background: #10b981; color: #022c22;
+          background: #0e563f; color: #fff;
           border: none; border-radius: 10px;
           padding: 13px;
           font-size: 0.95rem; font-weight: 700;
-          cursor: pointer; transition: all 0.2s;
+          cursor: pointer; transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
           display: flex; align-items: center; justify-content: center; gap: 8px;
-          font-family: 'DM Sans', sans-serif;
+          font-family: 'Plus Jakarta Sans', sans-serif;
+          box-shadow: 0 4px 12px rgba(14, 86, 63, 0.15);
         }
-        .fd-submit:hover:not(:disabled) { background: #34d399; transform: translateY(-1px); }
+        .fd-submit:hover:not(:disabled) { background: #15825f; transform: translateY(-1px); box-shadow: 0 6px 18px rgba(14, 86, 63, 0.22); }
         .fd-submit:disabled { opacity: 0.6; cursor: not-allowed; }
 
         @media (max-width: 768px) {

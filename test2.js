@@ -1,0 +1,1 @@
+fetch("https://tea-withering-system-4d483-default-rtdb.firebaseio.com/readings.json?orderBy=\"$key\"&limitToLast=100").then(r=>r.json()).then(d=>console.log(Object.keys(d).filter(k => k !== "latest" && k !== "vfd_device_02" && k !== "luwar01").slice(0, 5)))

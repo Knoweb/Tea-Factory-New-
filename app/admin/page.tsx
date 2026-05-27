@@ -17,6 +17,14 @@ export default function AdminDashboardPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    // Optimistically authorize from localStorage to make page navigation instant
+    if (typeof window !== "undefined" && localStorage.getItem("userRole") === "company_admin") {
+      setLoading(false);
+    }
+
+    let unsubscribeFactories: (() => void) | null = null;
+    let unsubscribeEmployees: (() => void) | null = null;
+
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       if (!user) {
         router.push("/login");
@@ -24,6 +32,9 @@ export default function AdminDashboardPage() {
       }
 
       try {
+        if (unsubscribeFactories) unsubscribeFactories();
+        if (unsubscribeEmployees) unsubscribeEmployees();
+
         // Fetch user data with timeout
         const userRef = ref(database, `users/${user.uid}`);
         const timeout = new Promise<never>((_, reject) =>
@@ -64,7 +75,7 @@ export default function AdminDashboardPage() {
 
         // Listen for factories
         const factoriesQuery = query(ref(database, "factories"), orderByChild("companyId"), equalTo(companyId));
-        onValue(factoriesQuery, (snapshot) => {
+        unsubscribeFactories = onValue(factoriesQuery, (snapshot) => {
           if (snapshot.exists()) {
             const factsObj = snapshot.val();
             const factsArray = Object.keys(factsObj).map(key => ({
@@ -81,7 +92,7 @@ export default function AdminDashboardPage() {
 
         // Listen for employees
         const employeesQuery = query(ref(database, "users"), orderByChild("companyId"), equalTo(companyId));
-        onValue(employeesQuery, (snapshot) => {
+        unsubscribeEmployees = onValue(employeesQuery, (snapshot) => {
           if (snapshot.exists()) {
             const empsObj = snapshot.val();
             setEmployeeCount(Object.keys(empsObj).length);
@@ -105,7 +116,11 @@ export default function AdminDashboardPage() {
       }
     });
 
-    return () => unsubscribeAuth();
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeFactories) unsubscribeFactories();
+      if (unsubscribeEmployees) unsubscribeEmployees();
+    };
   }, [router]);
 
   const handleLogout = async () => {

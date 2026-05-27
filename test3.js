@@ -1,0 +1,1 @@
+fetch("https://tea-withering-system-4d483-default-rtdb.firebaseio.com/readings.json?orderBy=\"$key\"&limitToLast=20").then(r=>r.json()).then(d=>console.log(Object.keys(d)))

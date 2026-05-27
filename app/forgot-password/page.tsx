@@ -1,87 +1,34 @@
 "use client";
 
 import React, { useState } from "react";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth, database } from "@/lib/firebase";
-import { ref, get } from "firebase/database";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Leaf, Mail, Lock, ArrowRight, Eye, EyeOff } from "lucide-react";
+import { sendPasswordResetEmail } from "firebase/auth";
+import { auth } from "@/lib/firebase";
+import { Leaf, Mail, ArrowRight, ArrowLeft, CheckCircle } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
-export default function LoginPage() {
-  const router = useRouter();
+export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setSuccess("");
     setLoading(true);
+
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-
-      // 1. Fetch user's organizational profile from the Realtime Database
-      const userRef = ref(database, `users/${user.uid}`);
-      const snapshot = await get(userRef);
-
-      if (snapshot.exists()) {
-        const userData = snapshot.val();
-        
-        // 2. Save the factory context so the rest of the app knows which factory to load
-        localStorage.setItem("factoryId", userData.factoryId || "");
-        localStorage.setItem("companyId", userData.companyId || "");
-        localStorage.setItem("userRole", userData.role || "");
-
-        // 3. Status Check
-        if (userData.status === "pending") {
-           await auth.signOut();
-           setError("Your company account is pending approval by a Super Admin.");
-           setLoading(false);
-           return;
-        } else if (userData.status === "rejected") {
-           await auth.signOut();
-           setError("Your company account registration was rejected.");
-           setLoading(false);
-           return;
-        }
-
-        // 3.5 Check for temporary password password change requirement
-        if (userData.needsPasswordChange === true || userData.needsPasswordChange === "true") {
-           router.push("/change-password");
-           return;
-        }
-
-        // 4. Role-based Redirect
-        if (userData.role === "super_admin") {
-           router.push("/super-admin");
-        } else if (userData.role === "company_admin") {
-           router.push("/admin");
-        } else if (userData.role === "factory_admin") {
-           router.push("/factory-dashboard");
-        } else {
-           router.push("/"); 
-        }
-        return; // Stop execution after redirect
-      } else {
-        // User auth exists but no database profile found
-        await auth.signOut();
-        setError("Account profile not found in database. Please contact an administrator.");
-      }
+      await sendPasswordResetEmail(auth, email);
+      setSuccess("A password reset recovery email has been sent successfully to " + email + ". Please check your inbox!");
+      setEmail("");
     } catch (err: any) {
-      if (
-        err.code === "auth/invalid-credential" ||
-        err.code === "auth/user-not-found" ||
-        err.code === "auth/wrong-password"
-      ) {
-        setError("Invalid email or password.");
+      if (err.code === "auth/user-not-found") {
+        setError("No registered account found with this email address.");
+      } else if (err.code === "auth/invalid-email") {
+        setError("Please enter a valid email address.");
       } else {
-        setError(err.message || "Failed to login. Please try again.");
+        setError(err.message || "Failed to send reset link. Please try again.");
       }
     } finally {
       setLoading(false);
@@ -164,22 +111,6 @@ export default function LoginPage() {
           line-height: 1.5;
         }
 
-        .card-stat {
-          font-size: 3.8rem;
-          font-weight: 800;
-          line-height: 1;
-          margin-bottom: 8px;
-          letter-spacing: -0.03em;
-        }
-
-        .card-text {
-          font-size: 0.95rem;
-          line-height: 1.5;
-          opacity: 0.95;
-          font-weight: 400;
-          letter-spacing: 0.01em;
-        }
-
         /* Right Form Panel */
         .right-panel {
           flex: 0.6;
@@ -190,32 +121,6 @@ export default function LoginPage() {
           padding: 40px;
           position: relative;
           min-height: 100vh;
-        }
-
-        /* Form Header bar (Sign Up link) */
-        .header-nav {
-          display: flex;
-          justify-content: flex-end;
-          align-items: center;
-          gap: 12px;
-          font-size: 0.9rem;
-          color: #6b7280;
-        }
-
-        .signup-btn {
-          padding: 8px 20px;
-          border-radius: 12px;
-          border: 1px solid #e5e7eb;
-          background: #f9fafb;
-          color: #1f2937;
-          font-weight: 600;
-          text-decoration: none;
-          transition: all 0.2s ease;
-        }
-
-        .signup-btn:hover {
-          background: #f3f4f6;
-          border-color: #d1d5db;
         }
 
         /* Middle Form Container */
@@ -251,18 +156,11 @@ export default function LoginPage() {
 
         .form-title h1 {
           font-family: 'Playfair Display', Georgia, serif;
-          font-size: 3rem;
+          font-size: 2.6rem;
           font-weight: 700;
           color: #111827;
           letter-spacing: -0.01em;
           line-height: 1.15;
-        }
-
-        .form-title h1 span {
-          font-family: 'Plus Jakarta Sans', sans-serif;
-          font-weight: 800;
-          color: #0e563f;
-          font-size: 2.6rem;
         }
 
         .form-title p {
@@ -315,45 +213,6 @@ export default function LoginPage() {
           background: #ffffff !important;
         }
 
-        /* Password eye toggle */
-        .eye-toggle {
-          position: absolute;
-          right: 18px;
-          top: 50%;
-          transform: translateY(-50%);
-          background: none;
-          border: none;
-          cursor: pointer;
-          color: #9ca3af;
-          display: flex;
-          padding: 0;
-          transition: color 0.2s;
-        }
-
-        .eye-toggle:hover {
-          color: #374151;
-        }
-
-        .forgot-row {
-          display: flex;
-          justify-content: flex-end;
-          margin-bottom: 24px;
-          margin-top: -12px;
-        }
-
-        .forgot-link {
-          font-size: 0.88rem;
-          color: #10b981;
-          font-weight: 600;
-          text-decoration: none;
-          transition: color 0.2s;
-        }
-
-        .forgot-link:hover {
-          color: #059669;
-          text-decoration: underline;
-        }
-
         /* Primary Emerald Submit Button */
         .submit-btn {
           width: 100%;
@@ -403,7 +262,7 @@ export default function LoginPage() {
 
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Error box */
+        /* Status boxes */
         .error-box {
           background: #fef2f2;
           border: 1.5px solid #fca5a5;
@@ -416,40 +275,31 @@ export default function LoginPage() {
           font-weight: 500;
         }
 
-        /* Divider line */
-        .divider-container {
-          display: flex;
-          align-items: center;
+        .success-box {
+          background: rgba(14, 86, 63, 0.05);
+          border: 1.5px solid rgba(14, 86, 63, 0.15);
+          border-radius: 14px;
+          padding: 16px;
+          font-size: 0.9rem;
+          color: #0e563f;
           text-align: center;
-          margin: 10px 0;
-          width: 100%;
-        }
-
-        .divider-container::before,
-        .divider-container::after {
-          content: '';
-          flex: 1;
-          border-bottom: 1.5px solid #e5e7eb;
-        }
-
-        .divider-text {
-          margin: 0 15px;
-          font-size: 0.8rem;
-          color: #9ca3af;
+          margin-bottom: 24px;
           font-weight: 600;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 8px;
         }
 
-        /* Secondary registration button */
-        .register-company-btn {
+        /* Back to login button */
+        .back-login-btn {
           width: 100%;
           height: 52px;
           background: #ffffff;
           border: 1.5px solid #e5e7eb;
           border-radius: 16px;
           color: #374151;
-          font-family: 'Outfit', sans-serif;
+          font-family: 'Plus Jakarta Sans', sans-serif;
           font-size: 0.95rem;
           font-weight: 600;
           display: flex;
@@ -460,7 +310,7 @@ export default function LoginPage() {
           gap: 10px;
         }
 
-        .register-company-btn:hover {
+        .back-login-btn:hover {
           background: #f9fafb;
           border-color: #d1d5db;
           color: #111827;
@@ -489,20 +339,19 @@ export default function LoginPage() {
 
       <div className="split-layout">
         
-        {/* Left Side: Single Framed Premium Image Card */}
+        {/* Left Side: Framed Image */}
         <div className="left-panel">
           <div className="single-image-card">
             <div className="image-overlay-text">
               <h2>Tea Factory Louver Control System</h2>
-              <p>Precision automated control for optimal tea withering. Monitor and adjust louvers in real-time for perfect air circulation, temperature, and humidity.</p>
+              <p>Precision automated control for optimal tea withering. Reset your password to securely manage and monitor your environmental control systems.</p>
             </div>
           </div>
         </div>
 
-        {/* Right Side: Clean, High-Contrast Light Form */}
+        {/* Right Side: Clean High-Contrast Light Form */}
         <div className="right-panel">
           
-          {/* Form Content */}
           <div className="form-container">
             
             <div>
@@ -513,76 +362,53 @@ export default function LoginPage() {
             </div>
 
             <div className="form-title">
-              <h1>Welcome back!</h1>
-              <p>Please enter your credentials below to access your organizational dashboard.</p>
+              <h1>Reset Password</h1>
+              <p>Enter your email address and we'll send you a secure link to recover your account.</p>
             </div>
 
             {error && <div className="error-box">{error}</div>}
-
-            <form onSubmit={handleLogin}>
-              <div className="field-group">
-                <label className="field-label" htmlFor="email">Email Address</label>
-                <div className="field-wrapper">
-                  <input
-                    id="email"
-                    type="email"
-                    placeholder="name@company.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    className="field-input"
-                  />
+            
+            {success ? (
+              <div className="success-box">
+                <CheckCircle size={28} color="#0e563f" />
+                <span>{success}</span>
+              </div>
+            ) : (
+              <form onSubmit={handleResetPassword}>
+                <div className="field-group">
+                  <label className="field-label" htmlFor="email">Email Address</label>
+                  <div className="field-wrapper">
+                    <input
+                      id="email"
+                      type="email"
+                      placeholder="name@company.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="field-input"
+                    />
+                  </div>
                 </div>
-              </div>
 
-              <div className="field-group">
-                <label className="field-label" htmlFor="password">Password</label>
-                <div className="field-wrapper">
-                  <input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    className="field-input"
-                  />
-                  <button
-                    type="button"
-                    className="eye-toggle"
-                    onClick={() => setShowPassword(!showPassword)}
-                    tabIndex={-1}
-                  >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-                </div>
-              </div>
+                <button type="submit" className="submit-btn" disabled={loading}>
+                  {loading ? (
+                    <><div className="spinner" /> Sending...</>
+                  ) : (
+                    <>Send Recovery Link <ArrowRight size={18} /></>
+                  )}
+                </button>
+              </form>
+            )}
 
-              <div className="forgot-row">
-                <Link href="/forgot-password" className="forgot-link">Forgot password?</Link>
-              </div>
-
-              <button type="submit" className="submit-btn" disabled={loading}>
-                {loading ? (
-                  <><div className="spinner" /> Signing in...</>
-                ) : (
-                  <>Sign In <ArrowRight size={18} /></>
-                )}
-              </button>
-            </form>
-
-            <div className="divider-container">
-              <span className="divider-text">or</span>
+            <div style={{ marginTop: success ? "0px" : "10px" }}>
+              <Link href="/login" className="back-login-btn">
+                <ArrowLeft size={16} /> Back to Login
+              </Link>
             </div>
-
-            <Link href="/register" className="register-company-btn">
-              <Leaf size={18} className="text-emerald-500" />
-              Register your company
-            </Link>
 
           </div>
 
-          {/* Footer Info */}
+          {/* Footer */}
           <div className="footer-info">
             <span>© 2026 SANOTA Technology</span>
             <span>SYSTEM ONLINE</span>
