@@ -65,7 +65,7 @@ export default function LoginPage() {
         } else if (userData.role === "factory_admin") {
            router.push("/factory-dashboard");
         } else {
-           router.push("/"); 
+           router.push("/dashboard"); 
         }
         return; // Stop execution after redirect
       } else {

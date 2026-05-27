@@ -55,7 +55,7 @@ export default function ChangePasswordPage() {
     } else if (role === "factory_admin") {
       router.push("/factory-dashboard");
     } else {
-      router.push("/");
+      router.push("/dashboard");
     }
   };
 
