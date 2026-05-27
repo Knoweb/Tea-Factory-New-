@@ -552,6 +552,7 @@ export default function LoginPage() {
                 <div className="field-wrapper">
                   <input
                     id="email"
+                    name="email"
                     type="email"
                     placeholder="name@company.com"
                     value={email}
@@ -568,6 +569,7 @@ export default function LoginPage() {
                 <div className="field-wrapper">
                   <input
                     id="password"
+                    name="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
                     value={password}
