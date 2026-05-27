@@ -30,12 +30,14 @@ export async function POST(req: Request) {
       createdAt: new Date().toISOString(),
     });
 
-    // 3. Dispatch Temporary Password Email to the newly registered worker
-    await sendTemporaryPasswordEmail({
+    // 3. Dispatch Temporary Password Email to the newly registered worker in the background
+    sendTemporaryPasswordEmail({
       to: email,
       subject: "Welcome to SANOTA - Your Temporary Credentials",
       name: name || "User",
       temporaryPassword: password,
+    }).catch((err) => {
+      console.error("Failed to send temporary password email in background:", err);
     });
 
     return NextResponse.json({
