@@ -98,7 +98,7 @@ export default function ChangePasswordPage() {
       setSuccess(true);
       setTimeout(() => {
         redirectHome(userRole);
-      }, 3000);
+      }, 600);
 
     } catch (err: any) {
       console.error("Error changing password:", err);
