@@ -17,49 +17,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [checkingAuth, setCheckingAuth] = useState(true);
-
-  // Auto-redirect if already logged in
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        try {
-          const userRef = ref(database, `users/${user.uid}`);
-          const snapshot = await get(userRef);
-          if (snapshot.exists()) {
-            const userData = snapshot.val();
-            
-            // Only redirect if active
-            if (userData.status === "pending" || userData.status === "rejected") {
-              setCheckingAuth(false);
-              return;
-            }
-
-            if (userData.needsPasswordChange === true || userData.needsPasswordChange === "true") {
-              router.push("/change-password");
-              return;
-            }
-
-            // Role-based Redirect
-            if (userData.role === "super_admin") {
-              router.push("/super-admin");
-            } else if (userData.role === "company_admin") {
-              router.push("/admin");
-            } else if (userData.role === "factory_admin") {
-              router.push("/factory-dashboard");
-            } else {
-              router.push("/dashboard");
-            }
-            return;
-          }
-        } catch (err) {
-          console.error("Auto-redirect check failed:", err);
-        }
-      }
-      setCheckingAuth(false);
-    });
-    return () => unsubscribe();
-  }, [router]);
+  const [checkingAuth, setCheckingAuth] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
