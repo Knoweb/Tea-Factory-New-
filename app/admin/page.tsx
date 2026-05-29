@@ -27,6 +27,14 @@ export default function AdminDashboardPage() {
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       if (!user) {
+        if (unsubscribeFactories) {
+          unsubscribeFactories();
+          unsubscribeFactories = null;
+        }
+        if (unsubscribeEmployees) {
+          unsubscribeEmployees();
+          unsubscribeEmployees = null;
+        }
         router.push("/login");
         return;
       }
@@ -124,6 +132,11 @@ export default function AdminDashboardPage() {
   }, [router]);
 
   const handleLogout = async () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("userRole");
+      localStorage.removeItem("companyId");
+      localStorage.removeItem("factoryId");
+    }
     await signOut(auth);
     router.push("/login");
   };

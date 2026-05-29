@@ -26,6 +26,10 @@ export default function SuperAdminDashboard() {
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       if (!user) {
+        if (unsubscribeDatabase) {
+          unsubscribeDatabase();
+          unsubscribeDatabase = null;
+        }
         router.push("/login");
         return;
       }
@@ -136,6 +140,11 @@ export default function SuperAdminDashboard() {
   };
 
   const handleLogout = async () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("userRole");
+      localStorage.removeItem("companyId");
+      localStorage.removeItem("factoryId");
+    }
     await auth.signOut();
     router.push("/login");
   };

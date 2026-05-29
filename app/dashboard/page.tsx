@@ -92,8 +92,8 @@ const fetchFirebaseData = async (): Promise<SensorReading | null> => {
     const user = auth.currentUser
     const token = user ? await user.getIdToken() : null
     const url = token 
-      ? `${baseUrl}/readings.json?orderBy="$key"&limitToLast=5&auth=${token}`
-      : `${baseUrl}/readings.json?orderBy="$key"&limitToLast=5`
+      ? `${baseUrl}/readings.json?orderBy=%22$key%22&limitToLast=5&auth=${token}`
+      : `${baseUrl}/readings.json?orderBy=%22$key%22&limitToLast=5`
 
     const response = await fetch(url, {
       signal: controller.signal,
@@ -1033,6 +1033,11 @@ export default function TeaFactoryDashboard() {
                   variant="ghost" 
                   size="sm" 
                   onClick={async () => {
+                    if (typeof window !== "undefined") {
+                      localStorage.removeItem("userRole");
+                      localStorage.removeItem("companyId");
+                      localStorage.removeItem("factoryId");
+                    }
                     await signOut(auth);
                     router.push("/login");
                   }}

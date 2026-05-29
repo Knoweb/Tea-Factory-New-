@@ -37,7 +37,14 @@ export default function FactoryDashboardPage() {
     let unsubscribeWorkers: (() => void) | null = null;
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
-      if (!user) { router.push("/login"); return; }
+      if (!user) {
+        if (unsubscribeWorkers) {
+          unsubscribeWorkers();
+          unsubscribeWorkers = null;
+        }
+        router.push("/login");
+        return;
+      }
 
       try {
         if (unsubscribeWorkers) unsubscribeWorkers();
@@ -137,6 +144,11 @@ export default function FactoryDashboardPage() {
   };
 
   const handleLogout = async () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("userRole");
+      localStorage.removeItem("companyId");
+      localStorage.removeItem("factoryId");
+    }
     await signOut(auth);
     router.push("/login");
   };
