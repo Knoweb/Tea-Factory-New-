@@ -9,6 +9,9 @@ export const metadata: Metadata = {
   description:
     "Industrial monitoring dashboard for louver controlling system with real-time temperature and humidity data",
   generator: "v0.app",
+  icons: {
+    icon: "/favicon.png",
+  },
 }
 
 export default function RootLayout({
