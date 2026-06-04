@@ -2,10 +2,10 @@
 # Exit immediately if a command exits with a non-zero status
 set -e
 
-IMAGE_NAME="ghcr.io/knoweb/tea-factory-new-:latest"
+IMAGE_NAME="ghcr.io/knoweb/tea-factory-new:latest"
 
 echo "Pulling latest image: $IMAGE_NAME..."
-docker pull "$IMAGE_NAME"
+docker pull "$IMAGE_NAME" || echo "Warning: Pull failed, using local image instead."
 
 # Determine which container is currently running
 if docker ps --format '{{.Names}}' | grep -Eq "^sanota-app-blue$"; then

@@ -7,7 +7,7 @@ on:
 env:
   REGISTRY: ghcr.io
   # Convert repository name to lowercase for GHCR compatibility
-  IMAGE_NAME: knoweb/tea-factory-new-
+  IMAGE_NAME: knoweb/tea-factory-new
 
 jobs:
   build-and-push:
