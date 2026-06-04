@@ -232,6 +232,21 @@ export default function FactoryDashboardPage() {
         }
         .fd-logout-btn:hover { background: #0e563f; color: #fff; border-color: #0e563f; transform: translateY(-1px); }
 
+        .fd-troughs-btn {
+          display: flex; align-items: center; gap: 6px;
+          background: #0e563f;
+          border: 1px solid #0e563f;
+          color: #fff;
+          padding: 8px 16px; border-radius: 8px;
+          font-size: 0.88rem; cursor: pointer;
+          transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+          font-family: 'Plus Jakarta Sans', sans-serif;
+          font-weight: 600;
+          box-shadow: 0 2px 6px rgba(14, 86, 63, 0.1);
+        }
+        .fd-troughs-btn:hover { background: #15825f; border-color: #15825f; transform: translateY(-1px); }
+
+
         /* Main layout */
         .fd-main { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
 
@@ -439,9 +454,13 @@ export default function FactoryDashboardPage() {
                 {factoryData.name}
               </div>
             )}
+            <button className="fd-troughs-btn" onClick={() => router.push("/dashboard")}>
+              <Leaf size={15} /> Monitor Troughs
+            </button>
             <button className="fd-logout-btn" onClick={handleLogout}>
               <LogOut size={15} /> Logout
             </button>
+
           </div>
         </nav>
 
