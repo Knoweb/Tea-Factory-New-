@@ -38,8 +38,8 @@ def run():
         fill=circle_color
     )
     
-    # Scale clean_leaf to fit inside the circle nicely (e.g. 140x140)
-    leaf_size = 140
+    # Scale clean_leaf to fit inside the circle nicely (e.g. 200x200)
+    leaf_size = 200
     scaled_leaf = clean_leaf.resize((leaf_size, leaf_size), Image.Resampling.LANCZOS)
     
     # Paste clean leaf outline onto the circular canvas, centered
