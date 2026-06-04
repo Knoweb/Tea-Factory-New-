@@ -1,123 +1,67 @@
-name: Zero Downtime CI/CD Pipeline
+name: CI/CD Zero Downtime Deploy
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
+
+env:
+  REGISTRY: ghcr.io
+  # Convert repository name to lowercase for GHCR compatibility
+  IMAGE_NAME: knoweb/tea-factory-new-
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     permissions:
-      packages: write
       contents: read
+      packages: write
+
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Log in to GitHub Container Registry
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to the Container Registry
         uses: docker/login-action@v3
         with:
-          registry: ghcr.io
+          registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-          
-      - name: Lowercase Repository Name
-        run: echo "REPO_OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
-      - name: Build and Push Docker image
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest
+
+      - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ghcr.io/${{ env.REPO_OWNER }}/louver-control-system:latest
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
-      - name: Lowercase Repository Name
-        run: echo "IMAGE_NAME=ghcr.io/$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')/louver-control-system:latest" >> $GITHUB_ENV
-
-      - name: Execute Blue-Green Deployment on DigitalOcean Droplet
-        uses: appleboy/ssh-action@master
-        env:
-          GITHUB_ACTOR: ${{ github.actor }}
-          CR_PAT: ${{ secrets.GITHUB_TOKEN }}
-          IMAGE_NAME: ${{ env.IMAGE_NAME }}
+      - name: Deploy to VPS via SSH
+        uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.DROPLET_IP }}
+          host: 168.144.109.118
           username: root
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          envs: GITHUB_ACTOR, CR_PAT, IMAGE_NAME
+          envs: GITHUB_TOKEN,GITHUB_ACTOR
           script: |
-            # Install Docker if it's not installed
-            if ! command -v docker &> /dev/null; then
-              echo "Docker not found. Installing Docker..."
-              curl -fsSL https://get.docker.com -o get-docker.sh
-              sh get-docker.sh
-              systemctl enable --now docker
-            fi
-            
-            echo "Authenticating with GitHub Container Registry..."
-            echo "$CR_PAT" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
-            
-            echo "Pulling latest image: $IMAGE_NAME"
-            docker pull "$IMAGE_NAME"
-            
-            # Create network so Nginx can resolve container names
-            docker network create tea-net || true
-            mkdir -p /root/nginx-conf
-
-            # Determine Active Container (Blue or Green)
-            if [ "$(docker ps -q -f name=tea-app-blue)" ]; then
-              NEW_APP="tea-app-green"
-              OLD_APP="tea-app-blue"
-            else
-              NEW_APP="tea-app-blue"
-              OLD_APP="tea-app-green"
-            fi
-
-            echo "Starting New App Container: $NEW_APP"
-            docker run -d --name $NEW_APP --network tea-net --restart always "$IMAGE_NAME"
-
-            echo "Waiting 15 seconds for app to initialize..."
-            sleep 15
-
-            # Re-write Nginx Proxy config to point to the newly started container
-            cat <<EOF > /root/nginx-conf/default.conf
-            server {
-                listen 80;
-                server_name _;
-                location / {
-                    proxy_pass http://$NEW_APP:3000;
-                    proxy_set_header Host \$host;
-                    proxy_set_header X-Real-IP \$remote_addr;
-                    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-                }
-            }
-            EOF
-
-            # Check if Nginx Proxy is already running
-            if [ ! "$(docker ps -q -f name=tea-nginx)" ]; then
-              echo "Starting initial Nginx Proxy..."
-              docker run -d --name tea-nginx --network tea-net -p 80:80 -v /root/nginx-conf:/etc/nginx/conf.d --restart always nginx:alpine
-            else
-              echo "Reloading Nginx Proxy to switch traffic..."
-              docker exec tea-nginx nginx -s reload
-            fi
-
-            # Clean up the Old App Container
-            if [ "$(docker ps -a -q -f name=$OLD_APP)" ]; then
-              echo "Terminating Old App Container: $OLD_APP..."
-              docker stop $OLD_APP || true
-              docker rm $OLD_APP || true
-            fi
-            
-            # Clean up unused Docker images to save disk space
-            echo "Cleaning up dangling images..."
-            docker image prune -a -f
+            echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+            /root/deploy.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
