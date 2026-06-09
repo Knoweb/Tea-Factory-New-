@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Download, Thermometer, Droplets, Wind, Activity, Database, Wifi, LogOut, Loader2, ChevronLeft } from "lucide-react"
+import { Download, Thermometer, Droplets, Wind, Activity, Database, Wifi, LogOut, Loader2, ChevronLeft, Fan, Gauge, Zap, AlertTriangle, CheckCircle, Settings } from "lucide-react"
 import Image from "next/image"
 import { useRouter, useParams } from "next/navigation"
 import { auth, database } from "@/lib/firebase"
@@ -451,6 +451,17 @@ export default function TroughDetailPage() {
   const [firebaseConnected, setFirebaseConnected] = useState(false)
   const [downloadStatus, setDownloadStatus] = useState<string>("")
   const [mounted, setMounted] = useState(false)
+  const [activeTab, setActiveTab] = useState<"monitor" | "idfan">("monitor")
+
+  // ID Fan state
+  const [idFanStatus, setIdFanStatus] = useState<"running" | "stopped" | "fault">("stopped")
+  const [idFanSpeed, setIdFanSpeed] = useState<number>(60)
+  const [idFanMode, setIdFanMode] = useState<"auto" | "manual">("auto")
+  const [idFanInletTemp, setIdFanInletTemp] = useState<number>(0)
+  const [idFanOutletTemp, setIdFanOutletTemp] = useState<number>(0)
+  const [idFanStaticPressure, setIdFanStaticPressure] = useState<number>(0)
+  const [idFanExhaustHumidity, setIdFanExhaustHumidity] = useState<number>(0)
+  const [idFanVfdFreq, setIdFanVfdFreq] = useState<number>(40)
 
   // Fetch trough details from database to get the custom name if configured
   useEffect(() => {
@@ -841,6 +852,11 @@ export default function TroughDetailPage() {
     );
   }
 
+  // ID Fan derived values
+  const idFanRpm = Math.round(idFanSpeed * 14.5)
+  const idFanStatusColor = idFanStatus === "running" ? "#16a34a" : idFanStatus === "fault" ? "#dc2626" : "#6b7280"
+  const idFanStatusLabel = idFanStatus === "running" ? "Running" : idFanStatus === "fault" ? "Fault" : "Stopped"
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-amber-50 p-2 sm:p-4 lg:p-6 xl:p-8 relative overflow-hidden">
       <div className="fixed inset-0 pointer-events-none z-0">
@@ -898,6 +914,206 @@ export default function TroughDetailPage() {
           </div>
         </div>
 
+        {/* Tab Navigation */}
+        <div className="bg-white rounded-2xl shadow-sm border p-1.5 mb-6 flex gap-1">
+          <button
+            onClick={() => setActiveTab("monitor")}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-bold text-sm transition-all duration-200 ${
+              activeTab === "monitor"
+                ? "bg-teal-600 text-white shadow-sm"
+                : "text-gray-500 hover:text-teal-700 hover:bg-teal-50"
+            }`}
+          >
+            <Activity className="h-4 w-4" />
+            Trough Monitor
+          </button>
+          <button
+            onClick={() => setActiveTab("idfan")}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-bold text-sm transition-all duration-200 ${
+              activeTab === "idfan"
+                ? "bg-slate-600 text-white shadow-sm"
+                : "text-gray-500 hover:text-slate-700 hover:bg-gray-50"
+            }`}
+          >
+            <Fan className="h-4 w-4" />
+            ID Fan
+          </button>
+        </div>
+
+        {/* ============================================================ */}
+        {/* ID FAN TAB */}
+        {/* ============================================================ */}
+        {activeTab === "idfan" && (
+          <div className="space-y-5">
+
+            {/* Status Banner */}
+            <div
+              className="rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border"
+              style={{
+                background: idFanStatus === "running" ? "#f0fdf4" : idFanStatus === "fault" ? "#fef2f2" : "#f8fafc",
+                borderColor: idFanStatus === "running" ? "#86efac" : idFanStatus === "fault" ? "#fca5a5" : "#e2e8f0",
+              }}
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
+                  style={{ background: idFanStatus === "running" ? "#dcfce7" : idFanStatus === "fault" ? "#fee2e2" : "#f1f5f9" }}>
+                  <Fan className="h-7 w-7" style={{ color: idFanStatusColor, animation: idFanStatus === "running" ? `spin ${Math.max(0.6, 3 - idFanSpeed / 50)}s linear infinite` : "none" }} />
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-0.5">ID Fan — {troughName}</p>
+                  <h2 className="text-xl font-extrabold" style={{ color: idFanStatusColor }}>{idFanStatusLabel}</h2>
+                  <p className="text-xs text-gray-500 mt-0.5">{idFanSpeed}% speed · {idFanRpm} RPM · {idFanVfdFreq} Hz VFD</p>
+                </div>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                <button onClick={() => setIdFanStatus("running")}
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all border-2 ${idFanStatus === "running" ? "bg-green-600 border-green-600 text-white shadow" : "bg-white border-green-300 text-green-700 hover:bg-green-50"}`}>
+                  <CheckCircle className="h-4 w-4" /> Start
+                </button>
+                <button onClick={() => setIdFanStatus("stopped")}
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all border-2 ${idFanStatus === "stopped" ? "bg-gray-600 border-gray-600 text-white shadow" : "bg-white border-gray-300 text-gray-600 hover:bg-gray-50"}`}>
+                  Stop
+                </button>
+                <button onClick={() => setIdFanStatus("fault")}
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all border-2 ${idFanStatus === "fault" ? "bg-red-500 border-red-500 text-white shadow" : "bg-white border-red-200 text-red-500 hover:bg-red-50"}`}>
+                  <AlertTriangle className="h-4 w-4" /> Fault
+                </button>
+              </div>
+            </div>
+
+            {/* Metric Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
+              {[
+                { label: "Fan Speed",       value: `${idFanSpeed}%`,                    sub: `${idFanRpm} RPM`,    icon: <Gauge      className="h-4 w-4 text-indigo-500" />, bg: "bg-indigo-50", val: "text-indigo-600" },
+                { label: "VFD Frequency",   value: `${idFanVfdFreq} Hz`,                sub: "Drive freq",          icon: <Zap        className="h-4 w-4 text-amber-500"  />, bg: "bg-amber-50",  val: "text-amber-600"  },
+                { label: "Static Pressure", value: `${idFanStaticPressure.toFixed(1)} Pa`, sub: "Inlet → Outlet",  icon: <Wind       className="h-4 w-4 text-teal-500"   />, bg: "bg-teal-50",   val: "text-teal-600"   },
+                { label: "Inlet Temp",      value: `${idFanInletTemp.toFixed(1)}°F`,     sub: "Chamber side",       icon: <Thermometer className="h-4 w-4 text-rose-500"   />, bg: "bg-rose-50",   val: "text-rose-600"   },
+                { label: "Outlet Temp",     value: `${idFanOutletTemp.toFixed(1)}°F`,    sub: "Exhaust side",       icon: <Thermometer className="h-4 w-4 text-orange-500" />, bg: "bg-orange-50", val: "text-orange-600" },
+                { label: "Exhaust RH",      value: `${idFanExhaustHumidity.toFixed(1)}%`, sub: "Humidity out",       icon: <Droplets   className="h-4 w-4 text-sky-500"    />, bg: "bg-sky-50",    val: "text-sky-600"    },
+              ].map((card) => (
+                <div key={card.label} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider leading-tight">{card.label}</span>
+                    <div className={`p-1.5 rounded-lg ${card.bg}`}>{card.icon}</div>
+                  </div>
+                  <div className={`text-2xl font-extrabold leading-tight ${card.val}`}>{card.value}</div>
+                  <div className="text-[11px] text-gray-400 font-medium">{card.sub}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Controls + Airflow side by side */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+              {/* Fan Controls */}
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col gap-5">
+                <h3 className="text-sm font-extrabold text-gray-600 uppercase tracking-wider flex items-center gap-2">
+                  <Settings className="h-4 w-4 text-teal-600" /> Fan Controls
+                </h3>
+                <div className="flex flex-col gap-2">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Operating Mode</p>
+                  <div className="grid grid-cols-2 gap-1.5 p-1 bg-gray-100 rounded-xl">
+                    <button onClick={() => setIdFanMode("auto")}
+                      className={`py-2.5 rounded-lg font-bold text-sm transition-all ${idFanMode === "auto" ? "bg-teal-600 text-white shadow-sm" : "text-gray-500 hover:text-teal-700"}`}>
+                      🔄 Auto
+                    </button>
+                    <button onClick={() => setIdFanMode("manual")}
+                      className={`py-2.5 rounded-lg font-bold text-sm transition-all ${idFanMode === "manual" ? "bg-teal-600 text-white shadow-sm" : "text-gray-500 hover:text-teal-700"}`}>
+                      🎛️ Manual
+                    </button>
+                  </div>
+                  {idFanMode === "auto" && (
+                    <p className="text-[11px] text-teal-700 bg-teal-50 border border-teal-100 rounded-lg px-3 py-2 font-medium">
+                      ✅ Speed is auto-controlled by chamber conditions.
+                    </p>
+                  )}
+                </div>
+                <div className="flex flex-col gap-2">
+                  <div className="flex justify-between items-center">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Fan Speed</p>
+                    <span className="text-base font-extrabold text-teal-700">{idFanSpeed}%</span>
+                  </div>
+                  <input type="range" min={0} max={100} step={5} value={idFanSpeed} disabled={idFanMode === "auto"}
+                    onChange={(e) => { const v = Number(e.target.value); setIdFanSpeed(v); setIdFanVfdFreq(Math.round(v * 0.5)) }}
+                    className="w-full h-2.5 rounded-full accent-teal-600 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed" />
+                  <div className="flex justify-between text-[10px] text-gray-400 font-semibold">
+                    <span>0% Off</span><span>50%</span><span>100% Full</span>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <div className="flex justify-between items-center">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">VFD Frequency</p>
+                    <span className="text-base font-extrabold text-teal-700">{idFanVfdFreq} Hz</span>
+                  </div>
+                  <input type="range" min={0} max={50} step={1} value={idFanVfdFreq} disabled={idFanMode === "auto"}
+                    onChange={(e) => { const v = Number(e.target.value); setIdFanVfdFreq(v); setIdFanSpeed(Math.round(v * 2)) }}
+                    className="w-full h-2.5 rounded-full accent-teal-600 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed" />
+                  <div className="flex justify-between text-[10px] text-gray-400 font-semibold">
+                    <span>0 Hz</span><span>25 Hz</span><span>50 Hz</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Airflow Path */}
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                <h3 className="text-sm font-extrabold text-gray-600 uppercase tracking-wider flex items-center gap-2 mb-5">
+                  <Wind className="h-4 w-4 text-teal-600" /> Airflow Path
+                </h3>
+                <div className="flex flex-col gap-2">
+                  {[
+                    { label: "Fresh Air Inlet", icon: "🌬️", desc: "Outside air enters" },
+                    { label: "Louvers", icon: "⚙️", desc: "Flow control dampers" },
+                    { label: "Tea Bed", icon: "🍃", desc: "Withering chamber" },
+                    { label: "ID Fan", icon: "💨", desc: "Induced draft exhaust", highlight: true },
+                    { label: "Exhaust", icon: "☁️", desc: "Moist air discharged" },
+                  ].map((item, i, arr) => (
+                    <div key={item.label}>
+                      <div className={`flex items-center gap-3 p-3 rounded-xl border ${item.highlight ? "border-teal-200 bg-teal-50" : "border-gray-100 bg-gray-50"}`}>
+                        <span className="text-xl w-8 text-center flex-shrink-0">{item.icon}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm font-bold ${item.highlight ? "text-teal-800" : "text-gray-700"}`}>{item.label}</p>
+                          <p className="text-[11px] text-gray-400">{item.desc}</p>
+                        </div>
+                        {item.highlight && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white flex-shrink-0" style={{ background: idFanStatusColor }}>{idFanStatusLabel}</span>
+                        )}
+                      </div>
+                      {i < arr.length - 1 && <div className="flex justify-start pl-5"><div className="w-0.5 h-3 bg-gray-200" /></div>}
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[11px] text-gray-400 mt-4 text-center">
+                  ID Fan creates negative pressure, pulling air through the tea bed and out.
+                </p>
+              </div>
+            </div>
+
+            {/* Stage Info */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {[
+                { stage: "Withering", icon: "🌱", desc: "Removes moisture from green leaf evenly across the trough." },
+                { stage: "Drying / Firing", icon: "🔥", desc: "Exhausts humid hot air to maintain dryer efficiency." },
+                { stage: "Fermentation", icon: "♻️", desc: "Controls fresh air exchange and temperature balance." },
+              ].map((item) => (
+                <div key={item.stage} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex gap-3 items-start">
+                  <span className="text-2xl mt-0.5">{item.icon}</span>
+                  <div>
+                    <p className="text-xs font-extrabold text-teal-700 uppercase tracking-wider mb-1">{item.stage}</p>
+                    <p className="text-xs text-gray-500 leading-relaxed">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+          </div>
+        )}
+
+
+        {/* ============================================================ */}
+        {/* TROUGH MONITOR TAB (existing content) */}
+        {/* ============================================================ */}
+        {activeTab === "monitor" && (
+          <div>
         {/* Status badges and controls section */}
         <div className="bg-white rounded-2xl shadow-sm border p-4 sm:p-6 mb-6 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
@@ -1215,6 +1431,8 @@ export default function TroughDetailPage() {
             </div>
           </CardContent>
         </Card>
+        </div>
+        )}
       </div>
     </div>
   )
