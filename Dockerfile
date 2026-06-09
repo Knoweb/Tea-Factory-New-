@@ -13,6 +13,19 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+
+# Accept Firebase credentials as build-time args (passed from CI secrets)
+ARG FIREBASE_PROJECT_ID
+ARG FIREBASE_CLIENT_EMAIL
+ARG FIREBASE_PRIVATE_KEY
+ARG NEXT_PUBLIC_FIREBASE_API_KEY
+
+# Expose them as environment variables so Next.js can read them during build
+ENV FIREBASE_PROJECT_ID=$FIREBASE_PROJECT_ID
+ENV FIREBASE_CLIENT_EMAIL=$FIREBASE_CLIENT_EMAIL
+ENV FIREBASE_PRIVATE_KEY=$FIREBASE_PRIVATE_KEY
+ENV NEXT_PUBLIC_FIREBASE_API_KEY=$NEXT_PUBLIC_FIREBASE_API_KEY
+
 RUN npm run build
 
 # Production image, copy all files and run Next.js standalone
